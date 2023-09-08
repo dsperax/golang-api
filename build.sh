@@ -1,2 +1,2 @@
-docker build . -t luanpontes100/mura
-docker push luanpontes100/mura:latest
+docker build . -t diogoSperandio/img
+docker push diogoSperandio/img:latest

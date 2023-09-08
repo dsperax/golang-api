@@ -15,7 +15,7 @@ type pessoa struct {
 	Apelido    string    `json:"Apelido"`
 	Nome       string    `json:"Nome"`
 	Nascimento string    `json:"Nascimento"`
-	Stack      []string  `json:"Stack"`
+	Idiomas    []string  `json:"Idiomas"`
 }
 
 type pessoas []pessoa
@@ -33,12 +33,12 @@ func (p *pessoa) validateNascimento() bool {
 	return err == nil
 }
 
-func (p *pessoa) validateStackArray() bool {
-	if len(p.Stack) == 0 {
+func (p *pessoa) validateIdiomasArray() bool {
+	if len(p.Idiomas) == 0 {
 		return true
 	}
-	for i := 0; i < len(p.Stack); i++ {
-		if len(p.Stack[i]) > 32 {
+	for i := 0; i < len(p.Idiomas); i++ {
+		if len(p.Idiomas[i]) > 32 {
 			return false
 		}
 	}
@@ -58,18 +58,18 @@ func (p *pessoa) validate() error {
 	if !validated {
 		return errors.New("nascimento inválido, deve estar no formato yyyy-mm-dd")
 	}
-	validated = p.validateStackArray()
+	validated = p.validateIdiomasArray()
 	if !validated {
-		return errors.New("stack inválido, deve ser um array de 32 caracteres")
+		return errors.New("idioma inválido, deve ser um array de 32 caracteres")
 	}
 	return nil
 }
 
 func (p *pessoa) createPerson(db *pgxpool.Pool) error {
 	err := db.QueryRow(context.Background(),
-		"INSERT INTO pessoas(Apelido, Nome, Nascimento, Stack) "+
+		"INSERT INTO pessoas(Apelido, Nome, Nascimento, Idiomas) "+
 			"VALUES($1, $2, $3, $4) RETURNING id",
-		p.Apelido, p.Nome, p.Nascimento, strings.Join(p.Stack, " | ")).
+		p.Apelido, p.Nome, p.Nascimento, strings.Join(p.Idiomas, " | ")).
 		Scan(&p.Id)
 
 	if err != nil {
@@ -80,15 +80,15 @@ func (p *pessoa) createPerson(db *pgxpool.Pool) error {
 
 func (p *pessoa) getPerson(db *pgxpool.Pool, id string) error {
 	return db.QueryRow(context.Background(),
-		"SELECT ID, Apelido, Nome, Nascimento, string_to_array(Stack, ' | ') as Stack "+
+		"SELECT ID, Apelido, Nome, Nascimento, string_to_array(Idiomas, ' | ') as Idiomas "+
 			"FROM pessoas WHERE id=$1", id).
-		Scan(&p.Id, &p.Apelido, &p.Nome, &p.Nascimento, &p.Stack)
+		Scan(&p.Id, &p.Apelido, &p.Nome, &p.Nascimento, &p.Idiomas)
 }
 
 // Search persons using term on field busca using trgm extension
 func (pessoas) searchPeople(db *pgxpool.Pool, term string) (pessoas, error) {
 	rows, err := db.Query(context.Background(),
-		"SELECT ID, Apelido, Nome, Nascimento, string_to_array(Stack, ' | ') as stack "+
+		"SELECT ID, Apelido, Nome, Nascimento, string_to_array(Idiomas, ' | ') as Idiomas "+
 			"FROM pessoas "+
 			"WHERE busca ilike '%' || $1 || '%' limit 50",
 		term)
@@ -101,7 +101,7 @@ func (pessoas) searchPeople(db *pgxpool.Pool, term string) (pessoas, error) {
 	pessoas := make([]pessoa, 0, 50)
 	for rows.Next() {
 		var p pessoa
-		if err := rows.Scan(&p.Id, &p.Apelido, &p.Nome, &p.Nascimento, &p.Stack); err != nil {
+		if err := rows.Scan(&p.Id, &p.Apelido, &p.Nome, &p.Nascimento, &p.Idiomas); err != nil {
 			return nil, err
 		}
 		pessoas = append(pessoas, p) // This will not cause reallocation until the slice exceeds 50 elements

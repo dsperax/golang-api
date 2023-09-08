@@ -4,9 +4,9 @@ CREATE TABLE IF NOT EXISTS PESSOAS (
     Apelido VARCHAR(32) UNIQUE,
     Nome VARCHAR(100),
     NASCIMENTO CHAR(10),
-    STACK TEXT,
+    IDIOMAS TEXT,
     BUSCA TEXT GENERATED ALWAYS AS (
-        lower(apelido || ' ' || nome || ' ' || STACK)
+        lower(apelido || ' ' || nome || ' ' || IDIOMAS)
     ) STORED
 );
 CREATE INDEX CONCURRENTLY IF NOT EXISTS IDX_BUSCA_TGRM ON PESSOAS USING GIST (BUSCA GIST_TRGM_OPS);
